@@ -1,10 +1,15 @@
 using Images, FileIO
 
-function box_count(contours, box_length)
+function box_count(image, contours, box_length)
+    width, height = size(image)
     count = Set()
     for contour in contours
         for coord in contour
             x, y = Tuple(coord)
+            # trim input border
+            if (x == 1 || y == 1 || x == width || y == height)
+                continue
+            end
             push!(count, [ceil(Int64, x/box_length) - 1, ceil(Int64, y/box_length) - 1])
         end
     end
