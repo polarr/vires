@@ -1,8 +1,3 @@
-using Images, FileIO
-using ImageMorphology, ImageBinarization, ImageEdgeDetection, ImageSegmentation
-using ImageEdgeDetection: Percentile
-using IndirectArrays
-
 #              N          NE      E       SE      S       SW        W      NW
 # direction between two pixels
 
@@ -33,8 +28,6 @@ function from_to(from, to, dir_delta)
     delta = to-from
     return findall(x->x == delta, dir_delta)[1]
 end
-
-
 
 function detect_move(image, p0, p2, nbd, border, done, dir_delta)
     dir = from_to(p0, p2, dir_delta)
@@ -100,6 +93,12 @@ function find_contours(image)
     for i=1:height
         lnbd = 1
         for j=1:width
+            #= remove border as contour
+            if (i == 1 || i == height || j == 1 || j == height)
+                continue
+            end
+            =#
+
             fji = image[i, j]
             is_outer = (image[i, j] == 1 && (j == 1 || image[i, j-1] == 0)) ## 1 (a)
             is_hole = (image[i, j] >= 1 && (j == width || image[i, j+1] == 0))
@@ -138,8 +137,6 @@ function find_contours(image)
     end
 
     return contour_list
-
-
 end
 
 # a contour is a vector of 2 int arrays
@@ -154,37 +151,3 @@ function draw_contours(image, color, contours)
         draw_contour(image, color, cnt)
     end
 end
-
-# load images
-img = load("src/ff_1.png")
-
-# convert to grayscale
-imgg = Gray.(img)
-img_gray = copy(imgg)
-img_contour = RGB.(imgg)
-
-# edge detection algorithms
-alg_canny = Canny(spatial_scale=5, high=Percentile(40), low=Percentile(20))
-
-img_edges_canny = detect_edges(imgg, alg_canny)
-
-# threshold
-imgg = imgg .> 0.58
-
-#=
-imgg_transform = feature_transform(imgg)
-imgg_dist = 1 .- distance_transform(imgg_transform)
-dist_trans = imgg_dist .< 1
-markers = label_components(dist_trans)
-segments = watershed(imgg_dist, markers)
-labels = labels_map(segments)
-colored_labels = IndirectArray(labels, distinguishable_colors(maximum(labels)))
-=#
-
-# calling find_contours
-cnts = find_contours(imgg)
-
-# finally, draw the detected contours
-draw_contours(img_contour, RGB(1,1,0), cnts)
-
-save("src/img_results.png", [img RGB.(img_gray) RGB.(colored_labels) RGB.(imgg) img_contour RGB.(img_edges_canny)])
