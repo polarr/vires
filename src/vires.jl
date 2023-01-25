@@ -56,7 +56,7 @@ for size in sizes
 end
 
 start_size = sizes[1]
-x = log.(sizes.* 1/start_size)
+x = log.(sizes.^-1 .*start_size)
 y = log.(count)
 
 dimension_plot = scatter(x, y, title="Minkowski Dimension", label="Data", xlabel="ln(scale_factor)", ylabel="ln(box_count)")
